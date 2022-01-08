@@ -21,6 +21,7 @@ def gen_code_image(p_f90: Path):
             "language": "Fortran",
             "theme": "one-light",
             "windowControls": False,
+            "backgroundColor": "rgba(255, 255, 255, 100)",
         }
     )
 
