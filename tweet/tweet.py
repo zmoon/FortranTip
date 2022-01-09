@@ -1,5 +1,5 @@
 """
-Generate a tweet and send as a draft
+Generate and post a tweet for @FortranTip
 """
 import argparse
 import json
@@ -39,7 +39,7 @@ def _progress(txt: str):
             progress.advance(task, 1)
 
 
-def gen_code_image(code: str) -> bytes:
+def gen_code_image(code: str, *, save: bool = True) -> bytes:
     payload = {
         "code": code,
         "language": "Fortran",
@@ -57,15 +57,18 @@ def gen_code_image(code: str) -> bytes:
 
     # Save code image to file
     img = r.content  # response content is the image (bytes)
-    with open(HERE / "code.jpg", "wb") as f:
-        f.write(r.content)
+    if save:
+        with open(HERE / "code.jpg", "wb") as f:
+            f.write(r.content)
 
     return img
 
 
 def post_tweet(tweet_text: str, code_image: Optional[bytes]) -> None:
     if not os.environ.get("GITHUB_ACTIONS"):
-        load_dotenv(HERE / ".env")
+        p_env = HERE / ".env"
+        assert p_env.is_file(), f".env file is needed"
+        load_dotenv(p_env)
 
     CK = os.environ.get("TWITTER_CK")
     CS = os.environ.get("TWITTER_CS")
@@ -90,6 +93,7 @@ def post_tweet(tweet_text: str, code_image: Optional[bytes]) -> None:
     if not payload["text"].strip() and payload.get("media") is None:
         raise ValueError("this tweet will be empty")
 
+    # Post
     with _progress("Posting Tweet to Twitter"):
         r_tweet = twitter.post(
             "https://api.twitter.com/2/tweets",
@@ -138,7 +142,7 @@ def main(tip: str, *, dry_run: bool = False, image_only: bool = False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="generate and post a tweet for @FortranTip")
     parser.add_argument(
         "tip",
         help="tip file stem (e.g., `hello_world`, `assoc`, `array_intrinsics`)",
