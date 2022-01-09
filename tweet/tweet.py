@@ -98,7 +98,7 @@ def post_tweet(tweet_text: str, code_image: Optional[bytes]) -> None:
     r_tweet.raise_for_status()
 
 
-def main(tip: str, *, dry_run: bool = False):
+def main(tip: str, *, dry_run: bool = False, image_only: bool = False):
     # Check for the relevant file(s)
     p_tip_f90 = _maybe_path(TIPS_DIR / f"{tip}.f90")
     p_tip_txt = _maybe_path(TIPS_DIR / f"{tip}.txt")
@@ -117,6 +117,12 @@ def main(tip: str, *, dry_run: bool = False):
         else:
             with _progress("Generating code image"):
                 code_image = gen_code_image(code)
+
+    # Optional early exit
+    if image_only:
+        if code_image is None:
+            raise ValueError(f"--image-only used but {tip}.f90 was not found")
+        return
 
     # Extract tweet text
     tweet_text = ""
@@ -140,7 +146,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d", "--dry-run", action="store_true", help="show what would be done"
     )
+    parser.add_argument(
+        "-i", "--image-only", action="store_true", help="only generate the code image",
+    )
 
     args = parser.parse_args()
 
-    main(args.tip, dry_run=args.dry_run)
+    main(args.tip, dry_run=args.dry_run, image_only=args.image_only)
